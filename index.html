@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Мини CRM — Список клиентов</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="header">
+    <h1>📋 Мини CRM</h1>
+    <p class="subtitle">Управление списком клиентов</p>
+  </header>
+
+  <main class="container">
+    <section class="toolbar">
+      <input type="search" id="search" placeholder="Поиск по имени, телефону или email..." />
+      <button id="addBtn" class="btn btn-primary">+ Добавить клиента</button>
+      <button id="exportBtn" class="btn">Экспорт CSV</button>
+    </section>
+
+    <section class="stats">
+      <div class="stat-card"><span id="totalCount">0</span><label>Всего</label></div>
+      <div class="stat-card"><span id="newCount">0</span><label>Новые</label></div>
+      <div class="stat-card"><span id="activeCount">0</span><label>Активные</label></div>
+      <div class="stat-card"><span id="closedCount">0</span><label>Закрытые</label></div>
+    </section>
+
+    <section class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th data-sort="name">Имя ⇅</th>
+            <th data-sort="phone">Телефон</th>
+            <th data-sort="email">Email</th>
+            <th data-sort="status">Статус ⇅</th>
+            <th data-sort="note">Примечание</th>
+            <th>Действия</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <p id="empty" class="empty hidden">Клиентов пока нет. Нажмите «Добавить клиента».</p>
+    </section>
+  </main>
+
+  <!-- Модальное окно -->
+  <div id="modal" class="modal hidden">
+    <div class="modal-box">
+      <h2 id="modalTitle">Новый клиент</h2>
+      <form id="form">
+        <label>Имя *<input name="name" required maxlength="60" /></label>
+        <label>Телефон<input name="phone" maxlength="30" placeholder="+7 ..." /></label>
+        <label>Email<input name="email" type="email" maxlength="60" /></label>
+        <label>Статус
+          <select name="status">
+            <option value="new">Новый</option>
+            <option value="active">Активный</option>
+            <option value="closed">Закрытый</option>
+          </select>
+        </label>
+        <label>Примечание<textarea name="note" rows="2" maxlength="200"></textarea></label>
+        <div class="modal-actions">
+          <button type="button" id="cancelBtn" class="btn">Отмена</button>
+          <button type="submit" class="btn btn-primary">Сохранить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
