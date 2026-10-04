@@ -1,7 +1,7 @@
-// Мини CRM — хранение в localStorage, таблица клиентов
-const STORAGE_KEY = 'mini-crm-clients';
+// Мини CRM — хранение на сервере (Vercel + Upstash Redis), таблица клиентов
+const API = '/api/clients';
 
-let clients = load();
+let clients = [];
 let editingId = null;
 let sortKey = null;
 let sortAsc = true;
@@ -11,15 +11,35 @@ const tbody = $('#tbody');
 const modal = $('#modal');
 const form = $('#form');
 
-function load() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
-  catch { return []; }
+async function api(path, options = {}) {
+  const res = await fetch(path, {
+    headers: { 'Content-Type': 'application/json' },
+    ...options,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `Ошибка сервера (${res.status})`);
+  }
+  return res.json();
 }
-function save() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(clients));
+
+async function load() {
+  setStatus('Загрузка…');
+  try {
+    clients = await api(API);
+    setStatus('');
+    render();
+  } catch (e) {
+    setStatus('⚠ ' + e.message);
+  }
 }
-function uid() {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+function setStatus(msg) {
+  const el = $('#status');
+  if (el) {
+    el.textContent = msg;
+    el.classList.toggle('hidden', !msg);
+  }
 }
 
 const STATUS = {
@@ -87,7 +107,7 @@ function closeModal() {
   editingId = null;
 }
 
-form.addEventListener('submit', (e) => {
+form.addEventListener('submit', async (e) => {
   e.preventDefault();
   const data = {
     name: form.name.value.trim(),
@@ -98,25 +118,35 @@ form.addEventListener('submit', (e) => {
   };
   if (!data.name) return;
 
-  if (editingId) {
-    const c = clients.find(x => x.id === editingId);
-    Object.assign(c, data);
-  } else {
-    clients.push({ id: uid(), createdAt: Date.now(), ...data });
+  try {
+    if (editingId) {
+      const updated = await api(API, { method: 'PUT', body: JSON.stringify({ id: editingId, ...data }) });
+      clients = clients.map((c) => (c.id === editingId ? updated : c));
+    } else {
+      const created = await api(API, { method: 'POST', body: JSON.stringify(data) });
+      clients.push(created);
+    }
+    render(); closeModal();
+  } catch (err) {
+    setStatus('⚠ ' + err.message);
   }
-  save(); render(); closeModal();
 });
 
 // ---- делегирование кликов по таблице ----
-tbody.addEventListener('click', (e) => {
+tbody.addEventListener('click', async (e) => {
   const editId = e.target.dataset.edit;
   const delId = e.target.dataset.del;
-  if (editId) openModal(clients.find(c => c.id === editId));
+  if (editId) openModal(clients.find((c) => c.id === editId));
   if (delId) {
-    const c = clients.find(x => x.id === delId);
+    const c = clients.find((x) => x.id === delId);
     if (confirm(`Удалить клиента «${c.name}»?`)) {
-      clients = clients.filter(x => x.id !== delId);
-      save(); render();
+      try {
+        await api(`${API}?id=${encodeURIComponent(delId)}`, { method: 'DELETE' });
+        clients = clients.filter((x) => x.id !== delId);
+        render();
+      } catch (err) {
+        setStatus('⚠ ' + err.message);
+      }
     }
   }
 });
@@ -149,4 +179,4 @@ modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); }
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
 $('#search').addEventListener('input', render);
 
-render();
+load(); // загружаем клиентов с сервера

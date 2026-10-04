@@ -79,3 +79,12 @@ tbody tr:hover { background: #f8faff; }
 @media (max-width: 640px) {
   .toolbar { flex-direction: column; }
 }
+
+.status {
+  margin: 8px 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #fff3cd;
+  color: #7a5b00;
+  font-size: 14px;
+}
